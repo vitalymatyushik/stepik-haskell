@@ -1,5 +1,6 @@
 module CustomFoldable where
 import Data.Monoid
+
 data Triple a = Tr a a a  deriving (Eq,Show)
 
 instance Foldable Triple where 
