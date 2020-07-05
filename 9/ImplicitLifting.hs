@@ -78,15 +78,29 @@ instance Monad m => MonadLogg (LoggT m) where
     w2log = write2log
     logg  = LoggT . return
 instance MonadLogg m => MonadLogg (StateT s m) where
-  w2log = undefined
-  logg  = undefined
+    w2log s = StateT $ \ st  -> do
+        w2log s
+        return ((), st)
+    logg l@(Logged _ st) = StateT $ \ s -> do 
+        logg l
+        return (st, s)
 instance MonadLogg m => MonadLogg (ReaderT r m) where
-  w2log = undefined
-  logg  = undefined
+    w2log s = ReaderT $ \_ -> w2log s
+    logg l = ReaderT $ \_ -> logg l
 logSt'' :: LoggT (State Integer) Integer      
 logSt'' = do 
     x <- logg $ Logged "BEGIN " 1
     modify (+x)
+    a <- get
+    w2log $ show $ a * 10
+    put 42
+    w2log " END"
+    return $ a * 100
+rdrStLog :: ReaderT Integer (StateT Integer Logg) Integer      
+rdrStLog = do 
+    x <- logg $ Logged "BEGIN " 1
+    y <- ask
+    modify (+ (x+y))
     a <- get
     w2log $ show $ a * 10
     put 42
